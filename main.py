@@ -43,22 +43,68 @@ class Physics:
         # [acceleration of distance] = [distance][angular velocity]^2 -G * M / [distance]^2
         return self.statedistancevalue * self.stateanglespeed**2 - (GRAVITATIONALCONSTANT * MASSOFTHESUNKG) / self.statedistancevalue**2
 
-    def calculateAngleAcceleration(state):
+    def calculateAngleAcceleration(self):
         # [acceleration of angle] = -2[speed][angular velocity] / distance
         return -2.0 * self.statedistancespeed * self.stateanglespeed / self.statedistancevalue
+
+    # Calculates a new value based on the time change and its derivative
+    # For example it calculates the new distance based on the distance derivative (velocity) and the elapsed time interval
+    def newValue(self,currentValue, deltaT, derivative):
+        return currentValue + deltaT * derivative
+
+    def resetStateToInitialConditions(self):
+        self.statedistancevalue = self.initialdistancevalue
+        self.statedistancespeed = self.initialdistancespeed
+
+        self.stateanglevalue = self.initialanglevalue
+        self.stateanglevspeed = self.initialanglespeed
+
+    def scaledDistance(self):
+        return self.statedistancevalue / SCALEFACTOR
+
+    # Calculates the position of the Earth
+    def calculateNewPosition(self):
+        # Calculate New Distance
+        distanceAcceleration = self.calculateDistanceAcceleration()
+        self.statedistancespeed = self.newValue(self.statedistancespeed, DELTAT, distanceAcceleration)
+        self.statedistancevalue = self.newValue(self.statedistancevalue, DELTAT, self.statedistancespeed)
+
+        # Calculate New Angle
+        angleAcceleration = self.calculateAngleAcceleration()
+        self.stateanglespeed = self.newValue(self.stateanglespeed, DELTAT, angleAcceleration)
+        self.stateanglevalue = self.newValue(self.stateanglevalue, DELTAT, self.stateanglespeed)
+
+        if (self.stateanglevalue > 2 * math.pi):
+            self.stateanglevalue = self.stateanglevalue % (2 * math.pi)
+
+    def updateFromUserInput(self,solarMassMultiplier):
+        self.statemassofthesunkg = MASSOFTHESUNKG * solarMassMultiplier
+
+def calculateEarthPosition(distance, angle):
+    w, h = screen.get_size()
+    middleX = math.floor(w / 2)
+    middleY = math.floor(h / 2)
+    centreX = math.cos(angle) * distance + middleX
+    centreY = math.sin(-angle) * distance + middleY
+
+    return (centreX, centreY)
+
+def drawScene(distance, angle):
+    earthPositionX, earthPositionY = calculateEarthPosition(distance, angle)
+    draw_circle(earthPositionX,earthPositionY,25)
 
 
 def draw_circle(pointx, pointy, radius):
     color = (0, 128, 255)
 
-    pygame.draw.circle(screen, color, [pointx, pointy],radius, 2)
+    pygame.draw.circle(screen, color, [int(round(pointx)), int(round(pointy))],radius, 2)
 
 def draw():
     done = False
-
-
     # getTicksLastFrame = pygame.time.get_ticks()
 
+    physics = Physics()
+    physics.resetStateToInitialConditions()
     while not done:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -69,11 +115,15 @@ def draw():
         # getTicksLastFrame = t
         # RollForward simulator
 
+        screen.fill((0,0,0))
+        draw_circle(250,250,60)
+
+        physics.calculateNewPosition();
+        drawScene(physics.scaledDistance(), physics.stateanglevalue)
+
         deltaTime = 0.050
 
-        screen.fill((0,0,0))
 
-        draw_circle(250,250,20)
 
         pygame.display.flip()
         clock.tick(20)
