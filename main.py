@@ -21,7 +21,7 @@ SCALEFACTOR = EARTHSUNDISTANCEMETERS / PIXELSINONEEARTHSUNDISTANCEPERPIXEL
 
 # The number of calculations of orbital path done in one 16 millisecond frame
 # The higher the number, the more precise are the calculations and the slower the simulation
-NUMBEROFCALCULATIONSPERFRAME = 1000
+NUMBEROFCALCULATIONSPERFRAME = 1
 
 DELTAT = 3600 * 24 / NUMBEROFCALCULATIONSPERFRAME
 
@@ -57,7 +57,7 @@ class Physics:
         self.statedistancespeed = self.initialdistancespeed
 
         self.stateanglevalue = self.initialanglevalue
-        self.stateanglevspeed = self.initialanglespeed
+        self.stateanglespeed = self.initialanglespeed
 
     def scaledDistance(self):
         return self.statedistancevalue / SCALEFACTOR
@@ -91,17 +91,14 @@ def calculateEarthPosition(distance, angle):
 
 def drawScene(distance, angle):
     earthPositionX, earthPositionY = calculateEarthPosition(distance, angle)
-    draw_circle(earthPositionX,earthPositionY,25)
 
-
-def draw_circle(pointx, pointy, radius):
     color = (0, 128, 255)
+    pygame.draw.circle(screen, color, [int(earthPositionX), int(earthPositionY)],25, 2)
 
-    pygame.draw.circle(screen, color, [int(round(pointx)), int(round(pointy))],radius, 2)
+
 
 def draw():
     done = False
-    # getTicksLastFrame = pygame.time.get_ticks()
 
     physics = Physics()
     physics.resetStateToInitialConditions()
@@ -110,23 +107,13 @@ def draw():
             if event.type == pygame.QUIT:
                 done = True
 
-        # t = pygame.time.get_ticks()
-        # deltaTime = (t - getTicksLastFrame) / 1000.0
-        # getTicksLastFrame = t
-        # RollForward simulator
-
         screen.fill((0,0,0))
-        draw_circle(250,250,60)
+        pygame.draw.circle(screen, (255,200,0), [250, 250],60, 2)
 
         physics.calculateNewPosition();
         drawScene(physics.scaledDistance(), physics.stateanglevalue)
 
-        deltaTime = 0.050
-
-
-
         pygame.display.flip()
-        clock.tick(20)
 
 
 draw()
