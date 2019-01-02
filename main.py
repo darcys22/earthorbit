@@ -14,16 +14,16 @@ EARTHANGULARVELOCITYMETERSPERSECOND= 1.990986e-7
 MASSOFTHESUNKG = 1.98855e30
 
 # The length of one AU (Earth-Sun distance) in pixels.
-PIXELSINONEEARTHSUNDISTANCEPERPIXEL = 150
+PIXELSINONEEARTHSUNDISTANCEPERPIXEL = 200
 
 # A factor by which we scale the distance between the sun and the earth in order to show it on screen
 SCALEFACTOR = EARTHSUNDISTANCEMETERS / PIXELSINONEEARTHSUNDISTANCEPERPIXEL
 
 # The number of calculations of orbital path done in one 16 millisecond frame
 # The higher the number, the more precise are the calculations and the slower the simulation
-NUMBEROFCALCULATIONSPERFRAME = 1
+NUMBEROFCALCULATIONSPERFRAME = 10
 
-DELTAT = 3600 * 24 / NUMBEROFCALCULATIONSPERFRAME
+DELTAT = 3600 * 24 / NUMBEROFCALCULATIONSPERFRAME * 800
 
 class Physics:
     def __init__(self):
@@ -63,16 +63,16 @@ class Physics:
         return self.statedistancevalue / SCALEFACTOR
 
     # Calculates the position of the Earth
-    def calculateNewPosition(self):
+    def calculateNewPosition(self, deltaTime):
         # Calculate New Distance
         distanceAcceleration = self.calculateDistanceAcceleration()
-        self.statedistancespeed = self.newValue(self.statedistancespeed, DELTAT, distanceAcceleration)
-        self.statedistancevalue = self.newValue(self.statedistancevalue, DELTAT, self.statedistancespeed)
+        self.statedistancespeed = self.newValue(self.statedistancespeed, deltaTime*DELTAT, distanceAcceleration)
+        self.statedistancevalue = self.newValue(self.statedistancevalue, deltaTime*DELTAT, self.statedistancespeed)
 
         # Calculate New Angle
         angleAcceleration = self.calculateAngleAcceleration()
-        self.stateanglespeed = self.newValue(self.stateanglespeed, DELTAT, angleAcceleration)
-        self.stateanglevalue = self.newValue(self.stateanglevalue, DELTAT, self.stateanglespeed)
+        self.stateanglespeed = self.newValue(self.stateanglespeed, deltaTime*DELTAT, angleAcceleration)
+        self.stateanglevalue = self.newValue(self.stateanglevalue, deltaTime*DELTAT, self.stateanglespeed)
 
         if (self.stateanglevalue > 2 * math.pi):
             self.stateanglevalue = self.stateanglevalue % (2 * math.pi)
@@ -102,15 +102,20 @@ def draw():
 
     physics = Physics()
     physics.resetStateToInitialConditions()
+    getTicksLastFrame = pygame.time.get_ticks()
     while not done:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 done = True
 
+        t = pygame.time.get_ticks()
+        deltaTime = (t - getTicksLastFrame) / 1000.0
+        getTicksLastFrame = t
+
         screen.fill((0,0,0))
         pygame.draw.circle(screen, (255,200,0), [250, 250],60, 2)
 
-        physics.calculateNewPosition();
+        physics.calculateNewPosition(deltaTime);
         drawScene(physics.scaledDistance(), physics.stateanglevalue)
 
         pygame.display.flip()
